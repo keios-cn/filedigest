@@ -3,7 +3,7 @@
 #define DIGEST_COMMON_
 
 
-class DigesterInterface
+class Digester
 {
 public:
     virtual void CTX_Initialize() = 0;
@@ -20,7 +20,7 @@ public:
 class DigesterFactory
 {
 public:
-    virtual DigesterInterface* CreateDigester() = 0;
+    virtual Digester* CreateDigester() = 0;
     virtual const char* GetDigestName() = 0;
 
 protected:
