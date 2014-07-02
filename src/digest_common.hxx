@@ -2,7 +2,8 @@
 #ifndef DIGEST_COMMON_
 #define DIGEST_COMMON_
 
-class DigestInterface
+
+class DigesterInterface
 {
 public:
     virtual void CTX_Initialize() = 0;
@@ -10,15 +11,34 @@ public:
     virtual void CTX_Finish() = 0;
     virtual size_t GetDigestLength() = 0;
     virtual bool GetDigest(void* p, size_t& len) = 0;
-    virtual const char* GetDigestName() = 0;
+
+    virtual DigesterFactory* GetFactory();
+    const char* GetDigesterName();
 };
 
 
-class DigestFactory
+class DigesterFactory
 {
 public:
-    virtual DigestInterface* CreateDigester() = 0;
+    virtual DigesterInterface* CreateDigester() = 0;
     virtual const char* GetDigestName() = 0;
+
+protected:
+    DigesterFactory() : m_next(NULL)
+    {
+        register();
+    }
+
+    void register()
+    {
+        this->m_next = head;
+        head = this;
+    }
+
+
+private:
+    static DigesterFactory* head;
+    DigesterFactory* m_next;
 };
 
 
