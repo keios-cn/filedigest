@@ -51,8 +51,6 @@ public:
     virtual ~DigestCommon()
     {}
 
-
-
 protected:
     bool m_initilized;
     bool m_finished;
