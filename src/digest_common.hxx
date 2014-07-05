@@ -6,14 +6,17 @@
 class Digester
 {
 public:
-    virtual void CTX_Initialize() = 0;
-    virtual void CTX_Update(const void* p, size_t len) = 0;
-    virtual void CTX_Finish() = 0;
+    virtual void Initialize() = 0;
+    virtual void Update(const void* p, size_t len) = 0;
+    virtual void Finish() = 0;
     virtual size_t GetDigestLength() = 0;
     virtual bool GetDigest(void* p, size_t& len) = 0;
-
     virtual DigesterFactory* GetFactory();
-    const char* GetDigesterName();
+
+    const char* GetDigesterName()
+    {
+        return GetFactory()->GetDigestName();
+    }
 };
 
 
