@@ -15,10 +15,18 @@ public:
     virtual bool GetDigest(void* p, size_t& len);
     virtual DigesterFactory* GetFactory();
 
+public:
+    static MD4_Digester* CreateDigester()
+    {
+        return new MD4_Digester();
+    }
+    
+    static const char* const name;
+
 private:
 	MD4_Digester()
 	{
-		MD4_Init(&m_ctx);
+		Initialize();
 	}
 
 	MD4_CTX m_ctx;
@@ -32,11 +40,11 @@ class MD4_Factory: public DigesterFactory
 public:
     virtual Digester* CreateDigester()
     {
-    	return new MD4_Digester();
+    	return MD4_Digester::CreateDigester();
     }
     virtual const char* GetDigestName()
     {
-    	return "MD4";
+    	return MD4_Digester::name;
     }
 
 protected:
