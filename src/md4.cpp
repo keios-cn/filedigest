@@ -5,6 +5,10 @@
 
 MD4_Factory MD4_Factory::instance();
 
+
+const char* const MD4_Digester::NAME = "md4";
+
+
 void MD4_Digester::Initialize()
 {
     MD4_Init(&m_ctx);
@@ -22,15 +26,18 @@ void MD4_Digester::Finish()
 
 size_t MD4_Digester::GetDigestLength()
 {
-    return MD4_DIGEST_LENGTH;
+    ASSERT(MD4_DIGEST_BYTES == MD4_DIGEST_LENGTH);
+
+    return MD4_DIGEST_BYTES;
 }
 
 bool MD4_Digester::GetDigest(void* p, size_t& len)
 {
-    if (len < MD4_DIGEST_LENGTH)
+    if (len < MD4_DIGEST_BYTES)
         return false;
-    memcpy(p, m_result, MD4_DIGEST_LENGTH);
-    len = MD4_DIGEST_LENGTH;
+
+    memcpy(p, m_result, MD4_DIGEST_BYTES);
+    len = MD4_DIGEST_BYTES;
     return true;
 }
 

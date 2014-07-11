@@ -8,6 +8,8 @@
 class MD4_Digester : public Digester
 {
 public:
+    enum { MD4_DIGEST_BYTES = 16 };
+
     virtual void Initialize();
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
@@ -21,7 +23,8 @@ public:
         return new MD4_Digester();
     }
     
-    static const char* const name;
+    static const char* const NAME;
+
 
 private:
     MD4_Digester()
@@ -30,7 +33,7 @@ private:
     }
 
     MD4_CTX m_ctx;
-    unsigned char m_result[16];
+    uint8 m_result[MD4_DIGEST_BYTES];
 };
 
 
@@ -44,7 +47,7 @@ public:
     }
     virtual const char* GetDigestName()
     {
-        return MD4_Digester::name;
+        return MD4_Digester::NAME;
     }
 
 protected:

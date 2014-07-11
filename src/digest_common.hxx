@@ -13,6 +13,9 @@ public:
     virtual bool GetDigest(void* p, size_t& len) = 0;
     virtual DigesterFactory* GetFactory();
 
+    virtual ~Digester()
+    {}
+
     const char* GetDigesterName()
     {
         return GetFactory()->GetDigestName();
