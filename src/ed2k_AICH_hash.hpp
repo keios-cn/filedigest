@@ -1,12 +1,12 @@
 
-#ifndef ED2K_FILE_HASH_
-#define ED2K_FILE_HASH_
+#ifndef ED2K_AICH_HASH_
+#define ED2K_AICH_HASH_
 
 #include "digest_common.hxx"
 #include "md4.hxx"
 
 
-class Ed2kFile_Digester : public Digester
+class Ed2kAICH_Digester : public Digester
 {
 public:
     virtual void Initialize();
@@ -16,21 +16,21 @@ public:
     virtual bool GetDigest(void* p, size_t& len);
     virtual DigesterFactory* GetFactory();
 
-    virtual ~Ed2kFile_Digester();
+    virtual ~Ed2kAICH_Digester();
 
 public:
-    static Ed2kFile_Digester* CreateDigester()
+    static Ed2kAICH_Digester* CreateDigester()
     {
-        return new Ed2kFile_Digester();
+        return new Ed2kAICH_Digester();
     }
 
     static const char* const NAME;
 
-    enum { ED2K_CHUNK_BYTES = 9728000 };
+    enum { ED2K_CHUNK_BYTES = 9728000, ED2K_AICH_BLOCK_BYTES = 180*1024 };
 
 private:
 
-    Ed2kFile_Digester() : 
+    Ed2kAICH_Digester() : 
             m_chunkHash(NULL), 
             m_rootHash(NULL), 
             m_fileOffset(0),
@@ -49,25 +49,25 @@ private:
 };
 
 
-class Ed2kFile_Factory: public DigesterFactory
+class Ed2kAICH_Factory: public DigesterFactory
 {
 public:
     virtual Digester* CreateDigester()
     {
-        return Ed2kFile_Digester::CreateDigester();
+        return Ed2kAICH_Digester::CreateDigester();
     }
     virtual const char* GetDigestName()
     {
-        return Ed2kFile_Digester::NAME;
+        return Ed2kAICH_Digester::NAME;
     }
 
 protected:
-    Ed2kFile_Factory()
+    Ed2kAICH_Factory()
     {}
 
 private:
-    static Ed2kFile_Factory instance;
+    static Ed2kAICH_Factory instance;
 };
 
 
-#endif /* ED2K_FILE_HASH_ */
+#endif /* ED2K_AICH_HASH_ */

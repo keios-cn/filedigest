@@ -36,31 +36,59 @@ void Ed2kFile_Digester::Initialize()
     m_rootHash->Initialize();
     memset(m_result, 0, sizeof(m_result));
     m_fileOffset = 0;
+    m_chunkStart = 0;
+}
+
+void Ed2kFile_Digester::OnChunkComplete()
+{
+    m_chunkHash->Finish();
+
+    uint8 chunkHash[MD4_Digester::MD4_DIGEST_BYTES];
+    size_t hLen = sizeof(chunkHash);
+    m_chunkHash->GetDigest(chunkHash, hLen);
+
+    // TODO: Record all chunk hash, <m_chunkStart, chunkHash>
+
+    m_rootHash->Update(chunkHash, hLen);
+
+    // init a new chunk
+    m_chunkHash->Initialize();
 }
 
 void Ed2kFile_Digester::Update(const void* p, size_t len)
 {
-    ulong64 chunkOff = m_fileOffset % ED2K_CHUNK_SIZE;
-    if (chunkOff + len < ED2K_CHUNK_SIZE)
+    ulong64 chunkOff = m_fileOffset % ED2K_CHUNK_BYTES;
+
+    if (chunkOff + len < ED2K_CHUNK_BYTES)
     {
         m_chunkHash->Update(p, len);
     }
     else
     {
-        size_t chunkRemain = ED2K_CHUNK_SIZE - chunkOff;
+        size_t off = 0;
+        size_t chunkRemain = ED2K_CHUNK_BYTES - chunkOff;
         m_chunkHash->Update(p, chunkRemain);
-        m_chunkHash->Finish();
+        OnChunkComplete();
 
-        uint8 chunkHash[MD4_Digester::MD4_DIGEST_BYTES];
-        size_t hLen = sizeof(chunkHash);
-        m_chunkHash->GetDigest(chunkHash, hLen);
+        off += chunkRemain;
+        m_chunkStart = m_fileOffset + off;
 
-        m_rootHash->Update(chunkHash, hLen);
-
-        // hash remaining data in a new chunk
         ASSERT(len >= chunkRemain);
-        m_chunkHash->Initialize();
-        m_chunkHash->Update(p + chunkRemain, len - chunkRemain);
+
+        while (len - off >= ED2K_CHUNK_BYTES)
+        {
+            m_chunkHash->Update(p + off, ED2K_CHUNK_BYTES);
+            OnChunkComplete();
+
+            off += ED2K_CHUNK_BYTES;
+            m_chunkStart = m_fileOffset + off;
+        }
+
+        // last less than chunk size
+        if (len - off > 0)
+        {
+            m_chunkHash->Update(p + off, len - off);
+        }
     }
 
     m_fileOffset += len;
@@ -68,12 +96,20 @@ void Ed2kFile_Digester::Update(const void* p, size_t len)
 
 void Ed2kFile_Digester::Finish()
 {
-    // TODO
-    if (m_fileOffset <= ED2K_CHUNK_SIZE)
-    {
+    size_t hLen = sizeof(m_result);
 
+    if (m_fileOffset <= ED2K_CHUNK_BYTES)
+    {
+        // FIXME! bug if m_fileOffset == ED2K_CHUNK_BYTES
+        m_chunkHash->Finish();
+        m_chunkHash->GetDigest(m_result, hLen);
     }
-    MD4_Final(m_result, &m_ctx);
+    else
+    {
+        OnChunkComplete();
+        m_rootHash->Finish();
+        m_rootHash->GetDigest(m_result, hLen);
+    }
 }
 
 size_t Ed2kFile_Digester::GetDigestLength()
