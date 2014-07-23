@@ -13,7 +13,6 @@ public:
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
     virtual bool GetDigest(void* p, size_t& len);
-    virtual DigesterFactory* GetFactory();
 
     virtual ~Ed2kAICH_Digester();
 

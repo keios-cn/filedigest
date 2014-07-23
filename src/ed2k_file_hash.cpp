@@ -121,13 +121,8 @@ bool Ed2kFile_Digester::GetDigest(void* p, size_t& len)
     if (len < MD4_Digester::MD4_DIGEST_BYTES)
         return false;
 
-    memcpy(p, m_result, MD4_Digester::MD4_DIGEST_BYTES);
-    len = MD4_Digester::MD4_DIGEST_BYTES;
+    memcpy(p, m_result, sizeof(m_result));
+    len = sizeof(m_result);
     return true;
-}
-
-DigesterFactory* Ed2kFile_Digester::GetFactory()
-{
-    return &Ed2kFile_Factory::instance;
 }
 
