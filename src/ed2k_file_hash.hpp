@@ -2,8 +2,8 @@
 #ifndef ED2K_FILE_HASH_
 #define ED2K_FILE_HASH_
 
-#include "digest_common.hxx"
-#include "md4.hxx"
+#include "digest_common.hpp"
+#include "md4.hpp"
 
 
 class Ed2kFile_Digester : public Digester
@@ -12,9 +12,7 @@ public:
     virtual void Initialize();
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
-    virtual size_t GetDigestLength();
     virtual bool GetDigest(void* p, size_t& len);
-    virtual DigesterFactory* GetFactory();
 
     virtual ~Ed2kFile_Digester();
 
@@ -31,6 +29,7 @@ public:
 private:
 
     Ed2kFile_Digester() : 
+            Digester(NAME, MD4_Digester::MD4_DIGEST_BYTES)
             m_chunkHash(NULL), 
             m_rootHash(NULL), 
             m_fileOffset(0),
@@ -46,6 +45,7 @@ private:
     ulong64       m_fileOffset;     // Current offset in file
     ulong64       m_chunkStart;     // start offset of current chunk hash
     uint8         m_result[MD4_Digester::MD4_DIGEST_BYTES];
+    uint8         m_lastChunkHash[MD4_Digester::MD4_DIGEST_BYTES];
 };
 
 

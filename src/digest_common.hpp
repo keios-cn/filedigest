@@ -2,6 +2,7 @@
 #ifndef DIGEST_COMMON_
 #define DIGEST_COMMON_
 
+#include "types_def.hpp"
 
 class Digester
 {
@@ -9,23 +10,30 @@ public:
     virtual void Initialize() = 0;
     virtual void Update(const void* p, size_t len) = 0;
     virtual void Finish() = 0;
-    virtual size_t GetDigestLength() = 0;
     virtual bool GetDigest(void* p, size_t& len) = 0;
 
     virtual ~Digester()
     {}
 
-    const char* GetName()
+    const char* GetName() const
     {
         return m_name;
     }
 
+    size_t GetDigestLength() const
+    {
+        return m_digestLength;
+    }
+
 protected:
 
-    Digester(): m_name("")
+    Digester(const char* name,
+            size_t digLen): m_name(name), m_digestLength(digLen)
     {}
 
-    const char* m_name;
+private:
+    const char* const m_name;
+    size_t m_digestLength;
 };
 
 
@@ -70,8 +78,8 @@ public:
 class DigestSafe
 {
 public:
-    DigestSafe(DigestInterface* dig) : 
-                    m_initilized(false), 
+    DigestSafe(Digester* dig) : 
+                    m_initialized(false), 
                     m_finished(false),
                     m_digest(dig)
     {}
@@ -79,38 +87,41 @@ public:
     void Initialize()
     {
         m_digest->Initialize();
-        m_initilized = true;
+        m_initialized = true;
+        m_finished = false;
     }
 
     void Update(const void* p, size_t len)
     {
-        ASSERT(m_initilized);
+        ASSERT(m_initialized);
+        ASSERT(!m_finished);
         m_digest->Update(p, len);
     }
 
     void Finish()
     {
-        ASSERT(m_initilized);
+        ASSERT(m_initialized);
+        ASSERT(!m_finished);
         m_digest->Finish();
         m_finished = true;
     }
 
-    size_t GetDigestLength()
+    size_t GetDigestLength() const
     {
         return m_digest->GetDigestLength();
     } 
 
     bool GetDigest(void* p, size_t& len)
     {
-        ASSERT(m_initilized);
+        ASSERT(m_initialized);
         ASSERT(m_finished);
         return m_digest->GetDigest(p, len);
     }
 
 protected:
-    bool m_initilized;
+    bool m_initialized;
     bool m_finished;
-    DigestInterface* m_digest;
+    Digester* m_digest;
 };
 
 

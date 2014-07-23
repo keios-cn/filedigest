@@ -43,13 +43,12 @@ void Ed2kFile_Digester::OnChunkComplete()
 {
     m_chunkHash->Finish();
 
-    uint8 chunkHash[MD4_Digester::MD4_DIGEST_BYTES];
-    size_t hLen = sizeof(chunkHash);
-    m_chunkHash->GetDigest(chunkHash, hLen);
+    size_t hLen = sizeof(m_lastChunkHash);
+    m_chunkHash->GetDigest(m_lastChunkHash, hLen);
 
-    // TODO: Record all chunk hash, <m_chunkStart, chunkHash>
+    // TODO: Record all chunk hash, into a map <m_chunkStart, chunkHash>
 
-    m_rootHash->Update(chunkHash, hLen);
+    m_rootHash->Update(m_lastChunkHash, hLen);
 
     // init a new chunk
     m_chunkHash->Initialize();
@@ -98,23 +97,23 @@ void Ed2kFile_Digester::Finish()
 {
     size_t hLen = sizeof(m_result);
 
-    if (m_fileOffset <= ED2K_CHUNK_BYTES)
+    if (m_fileOffset < ED2K_CHUNK_BYTES)
     {
-        // FIXME! bug if m_fileOffset == ED2K_CHUNK_BYTES
         m_chunkHash->Finish();
         m_chunkHash->GetDigest(m_result, hLen);
     }
+    else if (m_fileOffset == ED2K_CHUNK_BYTES)
+    {
+        memcpy(m_result, m_lastChunkHash, sizeof(m_result));
+    }
     else
     {
+        ASSERT(m_fileOffset > ED2K_CHUNK_BYTES);
+
         OnChunkComplete();
         m_rootHash->Finish();
         m_rootHash->GetDigest(m_result, hLen);
     }
-}
-
-size_t Ed2kFile_Digester::GetDigestLength()
-{
-    return MD4_Digester::MD4_DIGEST_BYTES;
 }
 
 bool Ed2kFile_Digester::GetDigest(void* p, size_t& len)

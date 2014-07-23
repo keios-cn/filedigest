@@ -24,15 +24,10 @@ void MD4_Digester::Finish()
     MD4_Final(m_result, &m_ctx);
 }
 
-size_t MD4_Digester::GetDigestLength()
+bool MD4_Digester::GetDigest(void* p, size_t& len)
 {
     ASSERT(MD4_DIGEST_BYTES == MD4_DIGEST_LENGTH);
 
-    return MD4_DIGEST_BYTES;
-}
-
-bool MD4_Digester::GetDigest(void* p, size_t& len)
-{
     if (len < MD4_DIGEST_BYTES)
         return false;
 
@@ -40,9 +35,3 @@ bool MD4_Digester::GetDigest(void* p, size_t& len)
     len = MD4_DIGEST_BYTES;
     return true;
 }
-
-DigesterFactory* MD4_Digester::GetFactory()
-{
-    return &MD4Factory::instance;
-}
-

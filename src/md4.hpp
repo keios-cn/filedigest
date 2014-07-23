@@ -1,8 +1,8 @@
 
-#ifndef MD4_HXX_
-#define MD4_HXX_
+#ifndef MD4_HPP_
+#define MD4_HPP_
 
-#include "digest_common.hxx"
+#include "digest_common.hpp"
 
 
 class MD4_Digester : public Digester
@@ -13,21 +13,19 @@ public:
     virtual void Initialize();
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
-    virtual size_t GetDigestLength();
     virtual bool GetDigest(void* p, size_t& len);
-    virtual DigesterFactory* GetFactory();
 
 public:
     static MD4_Digester* CreateDigester()
     {
         return new MD4_Digester();
     }
-    
+
     static const char* const NAME;
 
 
 private:
-    MD4_Digester()
+    MD4_Digester() : Digester(NAME, MD4_DIGEST_BYTES)
     {
         Initialize();
     }
@@ -59,4 +57,4 @@ private:
 };
 
 
-#endif /* MD4_HXX_ */
+#endif /* MD4_HPP_ */

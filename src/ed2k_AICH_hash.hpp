@@ -2,8 +2,8 @@
 #ifndef ED2K_AICH_HASH_
 #define ED2K_AICH_HASH_
 
-#include "digest_common.hxx"
-#include "md4.hxx"
+#include "digest_common.hpp"
+#include "md4.hpp"
 
 
 class Ed2kAICH_Digester : public Digester
@@ -12,7 +12,6 @@ public:
     virtual void Initialize();
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
-    virtual size_t GetDigestLength();
     virtual bool GetDigest(void* p, size_t& len);
     virtual DigesterFactory* GetFactory();
 
