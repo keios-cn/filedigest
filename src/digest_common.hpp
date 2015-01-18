@@ -4,13 +4,35 @@
 
 #include "types_def.hpp"
 
+
+class DigestResult
+{
+private:
+    uint8* m_digest;
+    size_t m_length;
+
+public:
+    DigestResult() : m_digest(NULL), m_length(0)
+    {}
+
+    DigestResult(const DigestResult& res) : m_digest(NULL), m_length(0)
+    {
+        Assign(res.m_digest, res.m_length);
+    }
+
+    ~DigestResult();
+
+    void Assign(uint8* val, size_t len);
+};
+
+
 class Digester
 {
 public:
     virtual void Initialize() = 0;
     virtual void Update(const void* p, size_t len) = 0;
     virtual void Finish() = 0;
-    virtual bool GetDigest(void* p, size_t& len) = 0;
+    virtual void GetDigest(DigestResult& result) = 0;
 
     virtual ~Digester()
     {}
@@ -51,27 +73,38 @@ protected:
 
     void register()
     {
-        this->m_next = head;
-        head = this;
+        this->m_next = g_head;
+        g_head = this;
     }
 
 private:
-    static DigesterFactory* head;
+    static DigesterFactory* g_head;
     DigesterFactory* m_next;
 
 public:
     static DigesterFactory* Find(const char* name)
     {
-        DigesterFactory* p = head;
+        DigesterFactory* p = g_head;
         while (p != NULL)
         {
             const char* n = p->GetDigestName();
             if (strcmp(n, name) == 0)
                 return p;
+
+            p = p->m_next;
         }
         return NULL;
     }
 
+    static Digester* CreateDigesterByName(const char* name)
+    {
+        DigesterFactory* factory = Find(name);
+        if (factory == NULL)
+        {
+            return NULL;
+        }
+        return factory->CreateDigester();
+    }
 };
 
 
@@ -111,11 +144,11 @@ public:
         return m_digest->GetDigestLength();
     } 
 
-    bool GetDigest(void* p, size_t& len)
+    void GetDigest(DigestResult& result)
     {
         ASSERT(m_initialized);
         ASSERT(m_finished);
-        return m_digest->GetDigest(p, len);
+        return m_digest->GetDigest(result);
     }
 
 protected:

@@ -4,7 +4,7 @@
 
 Ed2kFile_Factory Ed2kFile_Factory::instance();
 
-const char* const Ed2kFile_Digester::NAME = "ed2k";
+const char* const Ed2kFile_Digester::NAME = "ed2k_file_hash";
 
 ~Ed2kFile_Digester()
 {
@@ -47,10 +47,13 @@ void Ed2kFile_Digester::OnChunkComplete()
     m_chunkHash->GetDigest(m_lastChunkHash, hLen);
 
     // TODO: Record all chunk hash, into a map <m_chunkStart, chunkHash>
+    //       to support Hashset link: 
+    //    ed2k://|file|name|12043984|6744FC42EDA527B27F0B2F2538728B3E|p=264E6F6B587985D87EB0157A2A7BAF40:17B9A4D1DCE0E4C2B672DF257145E98A|/
+    //    ed2k://|file|name|12043984|<File Hash>|p=<Hash of 1st part>:<Hash of 2st part>|/
 
     m_rootHash->Update(m_lastChunkHash, hLen);
 
-    // init a new chunk
+    // init for next chunk
     m_chunkHash->Initialize();
 }
 
@@ -116,13 +119,9 @@ void Ed2kFile_Digester::Finish()
     }
 }
 
-bool Ed2kFile_Digester::GetDigest(void* p, size_t& len)
-{
-    if (len < MD4_Digester::MD4_DIGEST_BYTES)
-        return false;
 
-    memcpy(p, m_result, sizeof(m_result));
-    len = sizeof(m_result);
-    return true;
+void Ed2kFile_Digester::GetDigest(DigestResult& result)
+{
+    result.Assign(m_result, sizeof(m_result));
 }
 

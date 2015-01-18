@@ -13,7 +13,7 @@ public:
     virtual void Initialize();
     virtual void Update(const void* p, size_t len);
     virtual void Finish();
-    virtual bool GetDigest(void* p, size_t& len);
+    virtual void GetDigest(DigestResult& result);
 
 public:
     static MD4_Digester* CreateDigester()
@@ -38,6 +38,7 @@ private:
 class MD4_Factory: public DigesterFactory
 {
     friend class MD4_Digester;
+
 public:
     virtual Digester* CreateDigester()
     {

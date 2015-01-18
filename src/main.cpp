@@ -93,12 +93,12 @@ bool
 WaitForAvailableIOJob(FileInfo*& file)
 {
     bool ok = false;
-    g_bufferMutex->Lock();
+    // g_bufferMutex->Lock();
 
     while (!ok)
     {
         file = *g_ioFileIter;
-        if (g_currentIOBuffer.availableForRead(file))
+        if (g_currentIOBuffer->availableForRead(file))
         {
             // get file and buffer
             ok = true;
@@ -110,30 +110,34 @@ WaitForAvailableIOJob(FileInfo*& file)
         }
     }
 
-    g_bufferMutex->Unlock();
+    // g_bufferMutex->Unlock();
 }
 
-void*
-IOThread(void* threadid)
+void
+IOThread()
 {
     bool allDone = false;
     FileInfo* file;
+
+    g_bufferMutex->Lock();
 
     while (!allDone)
     {
         WaitForAvailableIOJob(file);
 
+        g_bufferMutex->Unlock();
+
         // read file
-        file.Read(g_currentIOBuffer);
+        file->Read(g_currentIOBuffer);
 
         g_bufferMutex->Lock();
 
         g_currentIOBuffer->doneReading();
         g_currentIOBuffer = g_currentIOBuffer->m_next();
 
-        if (file.hasReachedEOF())
+        if (file->hasReachedEOF())
         {
-            g_ioFileIter.next();
+            g_ioFileIter++;
             if (g_ioFileIter == g_fileArray.end())
             {
                 allDone = true;
@@ -142,31 +146,109 @@ IOThread(void* threadid)
 
         // wake up hash thread
         g_hashCond->Broadcast();
-
-        g_bufferMutex->Unlock();
     }
+
+    g_bufferMutex->Unlock();
+
     return NULL;
 }
 
 
 bool
-CheckAvailableHashJob(Digester*& digester, FileInputBuffer*& buffer)
+CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
 {
+    if (!g_currentHashBuffer->availableForHash())
+        return false;
 
+    if (g_currentHashBuffer->getFirstRunnableJob(index))
+    {
+        buffer = g_currentHashBuffer;
+        return true;
+    }
+
+    // no available job in current buffer,
+    // let's see next buffer
+    buffer = g_currentHashBuffer->nextBuf();
+
+    if (!buffer->availableForHash())
+    {
+        return false;
+    }
+
+    FileInfo* fileInfo = buffer->getFileInfo();
+    if (g_currentHashBuffer->getFileInfo() != fileInfo)
+    {
+        // next buffer is a new file
+        ASSERT(g_currentHashBuffer->hasReachEOF());
+
+        if (buffer->getFirstRunnableJob(fileInfo, index))
+        {
+            return true;
+        }
+        return false;
+    }
+    else
+    {
+        // same file
+        for (index = 0; index < fileInfo->getHashCount(); ++index)
+        {
+            if (g_currentHashBuffer->getHashStatusByIndex(index)->hasDone() &&
+                    buffer->getHashStatusByIndex(index)->hasNotRun())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 
-void*
-HashThread(void* unused)
+void
+HashThread()
 {
+    bool allDone = false;
+
+    int hashIndex;
+    FileInputBuffer* buffer;
+
     g_bufferMutex->Lock();
-    while ()
+
+    while (!allDone)
     {
+        while (!CheckAvailableHashJob(buffer, hashIndex))
+        {
+            g_hashCond->Wait(g_bufferMutex);
+        }
 
+        buffer->getHashStatusByIndex()->setRunning();
+        g_bufferMutex->Unlock();
+
+        buffer->doHash(hashIndex);
+
+        g_bufferMutex->Lock();
+
+        buffer->getHashStatusByIndex()->setDone();
+        if (buffer->hasReachEOF())
+        {
+            if (buffer->checkAllDone() && buffer->getFileInfo()->checkFinish())
+            {
+                buffer->getFileInfo()->reportResult();
+            }
+        }
+
+        if (buffer->checkAllDone())  // can move next
+        {
+            ASSERT(buffer == g_currentHashBuffer);
+
+            g_currentHashBuffer = buffer->nextBuf();
+
+            buffer->resetForRead();
+            g_ioCond->Broadcast();
+        }
     }
+
     g_bufferMutex->Unlock();
-
-
+    return;
 }
 
 

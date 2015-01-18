@@ -3,6 +3,7 @@
 #include "md4/md4.h"
 
 
+// Factory instance to register
 MD4_Factory MD4_Factory::instance();
 
 
@@ -24,14 +25,9 @@ void MD4_Digester::Finish()
     MD4_Final(m_result, &m_ctx);
 }
 
-bool MD4_Digester::GetDigest(void* p, size_t& len)
+void MD4_Digester::GetDigest(DigestResult& result)
 {
     ASSERT(MD4_DIGEST_BYTES == MD4_DIGEST_LENGTH);
 
-    if (len < MD4_DIGEST_BYTES)
-        return false;
-
-    memcpy(p, m_result, MD4_DIGEST_BYTES);
-    len = MD4_DIGEST_BYTES;
-    return true;
+    result.Assign(m_result, MD4_DIGEST_BYTES);
 }
