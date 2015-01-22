@@ -3,6 +3,7 @@
 #define MD4_HPP_
 
 #include "digest_common.hpp"
+#include "md4/md4.h"
 
 
 class MD4_Digester : public Digester
@@ -23,6 +24,7 @@ public:
 
     static const char* const NAME;
 
+    void GetDigest(void* p, size_t& len);
 
 private:
     MD4_Digester() : Digester(NAME, MD4_DIGEST_BYTES)

@@ -75,7 +75,7 @@ public:
 private:
 
     Ed2kFile_Digester() : 
-            Digester(NAME, MD4_Digester::MD4_DIGEST_BYTES)
+            Digester(NAME, MD4_Digester::MD4_DIGEST_BYTES),
             m_chunkHash(NULL), 
             m_rootHash(NULL), 
             m_fileOffset(0),

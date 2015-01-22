@@ -1,19 +1,25 @@
 
-#include "main.hpp"
 #include <vector>
 #include <string>
 #include <pthread.h>
 
+#include "main.hpp"
+#include "file_io.hpp"
+
+
+class PthreadCondition;
 
 class PthreadLock : public SimpleLock
 {
+    friend PthreadCondition;
+
 private:
     pthread_mutex_t m_mutex;
 
 public:
     PthreadLock()
     {
-        pthread_mutex_init(&m_mutex);
+        pthread_mutex_init(&m_mutex, NULL);
     }
     ~PthreadLock()
     {
@@ -89,7 +95,7 @@ std::vector<FileInfo*> g_fileArray;
 std::vector<FileInfo*>::iterator g_ioFileIter;
 
 
-bool
+void
 WaitForAvailableIOJob(FileInfo*& file)
 {
     bool ok = false;
@@ -133,7 +139,7 @@ IOThread()
         g_bufferMutex->Lock();
 
         g_currentIOBuffer->doneReading();
-        g_currentIOBuffer = g_currentIOBuffer->m_next();
+        g_currentIOBuffer = g_currentIOBuffer->nextBuf();
 
         if (file->hasReachedEOF())
         {
@@ -150,7 +156,7 @@ IOThread()
 
     g_bufferMutex->Unlock();
 
-    return NULL;
+    return;
 }
 
 
@@ -181,7 +187,7 @@ CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
         // next buffer is a new file
         ASSERT(g_currentHashBuffer->hasReachEOF());
 
-        if (buffer->getFirstRunnableJob(fileInfo, index))
+        if (buffer->getFirstRunnableJob(index))
         {
             return true;
         }
@@ -220,14 +226,14 @@ HashThread()
             g_hashCond->Wait(g_bufferMutex);
         }
 
-        buffer->getHashStatusByIndex()->setRunning();
+        buffer->getHashStatusByIndex(hashIndex)->setRunning();
         g_bufferMutex->Unlock();
 
         buffer->doHash(hashIndex);
 
         g_bufferMutex->Lock();
 
-        buffer->getHashStatusByIndex()->setDone();
+        buffer->getHashStatusByIndex(hashIndex)->setDone();
         if (buffer->hasReachEOF())
         {
             if (buffer->checkAllDone() && buffer->getFileInfo()->checkFinish())
@@ -252,13 +258,34 @@ HashThread()
 }
 
 
+void
+InitializeThreads()
+{
+    g_bufferMutex = CreateSimpleLock();
+    g_hashCond = CreateSimpleCondition();
+    g_ioCond   = CreateSimpleCondition();
+}
+
+
 int
 main()
 {
+    std::vector<std::string> hashNames;
+    hashNames.push_back("md4");
+    hashNames.push_back("ed2k_file_hash");
+
+    FileInfo* f1 = new FileInfo("test.dat");
+    f1->InitializeHashers(hashNames);
+    g_fileArray.push_back(f1);
+
+
+    FileInputBuffer::Initialize(hashNames.size());
     g_currentIOBuffer = FileInputBuffer::g_inputRingBufferArr[0];
     g_currentHashBuffer = g_currentIOBuffer;
 
-    g_ioFile = g_fileArray.head();
+    g_ioFileIter = g_fileArray.begin();
+
+    return 0;
 }
 
 

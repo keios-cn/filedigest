@@ -17,20 +17,20 @@ FileInputBuffer::Initialize(int hashCount)
     g_inputRingBufferArr = new FileInputBuffer*[g_ringBufferCount];
 
     g_inputRingBufferArr[0] = new FileInputBuffer(g_defaultBufferSize, hashCount);
-    for (int i = 1; i < g_ringBufferCount; ++i)
+    for (size_t i = 1; i < g_ringBufferCount; ++i)
     {
         g_inputRingBufferArr[i] = new FileInputBuffer(g_defaultBufferSize, hashCount);
-        g_inputRingBufferArr[i-1].m_next = g_inputRingBufferArr[i];
-        g_inputRingBufferArr[i].m_prev = g_inputRingBufferArr[i-1];
+        g_inputRingBufferArr[i-1]->m_next = g_inputRingBufferArr[i];
+        g_inputRingBufferArr[i]->m_prev = g_inputRingBufferArr[i-1];
     }
-    g_inputRingBufferArr[0].m_prev = g_inputRingBufferArr[g_ringBufferCount-1];
-    g_inputRingBufferArr[g_ringBufferCount-1].m_next = g_inputRingBufferArr[0];
+    g_inputRingBufferArr[0]->m_prev = g_inputRingBufferArr[g_ringBufferCount-1];
+    g_inputRingBufferArr[g_ringBufferCount-1]->m_next = g_inputRingBufferArr[0];
 }
 
 void
 FileInputBuffer::Uninitialize()
 {
-    for (int i = 0; i < g_ringBufferCount; ++i)
+    for (size_t i = 0; i < g_ringBufferCount; ++i)
     {
         delete g_inputRingBufferArr[i];
     }
@@ -61,7 +61,7 @@ FileInputBuffer::~FileInputBuffer()
 
 
 bool
-FileInfo::InitializeHashers(std::vector<std::string> hashNames)
+FileInfo::InitializeHashers(const std::vector<std::string>& hashNames)
 {
     m_hashCount = hashNames.size();
 
@@ -70,7 +70,7 @@ FileInfo::InitializeHashers(std::vector<std::string> hashNames)
 
     for (int i = 0; i < m_hashCount; ++i)
     {
-        m_hashers[i] = DigesterFactory.CreateDigesterByName(hashNames[i].c_str());
+        m_hashers[i] = DigesterFactory::CreateDigesterByName(hashNames[i].c_str());
         if (m_hashers[i] == NULL)
             return false;
     }

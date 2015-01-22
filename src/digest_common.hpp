@@ -3,7 +3,8 @@
 #define DIGEST_COMMON_
 
 #include "types_def.hpp"
-
+#include <stdlib.h>
+#include <string.h>
 
 class DigestResult
 {
@@ -17,12 +18,17 @@ public:
 
     DigestResult(const DigestResult& res) : m_digest(NULL), m_length(0)
     {
-        Assign(res.m_digest, res.m_length);
+        assign(res.m_digest, res.m_length);
     }
 
     ~DigestResult();
 
-    void Assign(uint8* val, size_t len);
+    void assign(uint8* val, size_t len);
+
+    bool hasResult()
+    {
+        return (m_digest != NULL && m_length != 0);
+    }
 };
 
 
@@ -61,25 +67,25 @@ private:
 
 class DigesterFactory
 {
+private:
+    static DigesterFactory* g_head;  // Global linked list head
+    DigesterFactory* m_next;
+
 public:
     virtual Digester* CreateDigester() = 0;
     virtual const char* GetDigestName() = 0;
 
 protected:
-    DigesterFactory() : m_next(NULL)
-    {
-        register();
-    }
-
-    void register()
+    void doRegister()
     {
         this->m_next = g_head;
         g_head = this;
     }
 
-private:
-    static DigesterFactory* g_head;
-    DigesterFactory* m_next;
+    DigesterFactory() : m_next(NULL)
+    {
+        doRegister();
+    }
 
 public:
     static DigesterFactory* Find(const char* name)

@@ -33,7 +33,7 @@ public:
     {}
     ~FileInfo();
 
-    bool InitializeHashers(std::vector<std::string> hashNames);
+    bool InitializeHashers(const std::vector<std::string>& hashNames);
 
     int getHashCount()
     {
@@ -59,13 +59,18 @@ public:
 
     bool checkFinish()
     {
-        
+        for (int i = 0; i < m_hashCount; ++i)
+        {
+            if (!m_results[i].hasResult())
+                return false;
+        }
         m_allFinish = true;
+        return true;
     }
 
-    void reportResult(int index)
+    void reportResult()
     {
-        //
+        //TODO : output all result for this file
     }
 };
 
@@ -207,7 +212,7 @@ public:
     {
         for (int i = 0; i < m_hashCount; ++i)
         {
-            if (!m_hashStatusArr[index].hasDone())
+            if (!m_hashStatusArr[i].hasDone())
                 return false;
         }
         return true;
