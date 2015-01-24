@@ -1,8 +1,8 @@
 
 CXX      = g++
-CXXFLAGS = -g -Wall -Winvalid-offsetof
+CXXFLAGS = -g -Wall -Winvalid-offsetof -DDEBUG_ALL
 INCLUDES =
-LDFLAGS  =
+LDFLAGS  = -lpthread
 
 all: multihash
 

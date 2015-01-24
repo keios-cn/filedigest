@@ -15,7 +15,7 @@ void MD4_Digester::Initialize()
     MD4_Init(&m_ctx);
 }
 
-void MD4_Digester::Update(const void* p, size_t len)
+void MD4_Digester::Update(const u8* p, size_t len)
 {
     MD4_Update(&m_ctx, p, len);
 }
@@ -31,3 +31,11 @@ void MD4_Digester::GetDigest(DigestResult& result)
 
     result.assign(m_result, MD4_DIGEST_BYTES);
 }
+
+void MD4_Digester::GetDigest(u8* p, size_t len)
+{
+    ASSERT(len >= MD4_DIGEST_BYTES);
+
+    memcpy(p, m_result, MD4_DIGEST_BYTES);
+}
+

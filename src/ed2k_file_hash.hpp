@@ -56,7 +56,7 @@ class Ed2kFile_Digester : public Digester
 {
 public:
     virtual void Initialize();
-    virtual void Update(const void* p, size_t len);
+    virtual void Update(const u8* p, size_t len);
     virtual void Finish();
     virtual void GetDigest(DigestResult& result);
 

@@ -56,11 +56,13 @@
  * [including the GNU Public Licence.]
  */
 
-//#include <openssl/crypto.h>
+#include "crypto.h"
+/*
 #define fips_md_init(alg) fips_md_init_ctx(alg, alg)
 #define fips_md_init_ctx(alg, cx) \
     int alg##_Init(cx##_CTX *c)
 #define fips_cipher_abort(alg) while(0)
+*/
 
 //#include <openssl/opensslconf.h>
 #if !defined(OPENSSL_NO_SHA1) && !defined(OPENSSL_NO_SHA)

@@ -5,6 +5,10 @@
 #include "types_def.hpp"
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+
+
+void dbg_printf(const char* fmt, ... );
 
 class DigestResult
 {
@@ -23,11 +27,35 @@ public:
 
     ~DigestResult();
 
-    void assign(uint8* val, size_t len);
+    void assign(const uint8* val, size_t len);
 
     bool hasResult()
     {
         return (m_digest != NULL && m_length != 0);
+    }
+
+    static void ByteToHexString(uint8 by, char* outStr)
+    {
+        static char HEX_CHAR[17] = "0123456789ABCDEF";
+
+        outStr[0] = HEX_CHAR[ (by >> 4) & 0x0F ];
+        outStr[1] = HEX_CHAR[ by & 0x0F ];
+        outStr[2] = '\0';
+    }
+
+    void toString(std::string& outStr)
+    {
+        ASSERT(hasResult());
+
+        outStr = "";
+        outStr.reserve(m_length * 2);
+        for (uint8* p = m_digest; p < m_digest + m_length; ++p)
+        {
+            char hexStr[4];
+            ByteToHexString( *p, hexStr );
+
+            outStr += hexStr;
+        }
     }
 };
 
@@ -36,7 +64,7 @@ class Digester
 {
 public:
     virtual void Initialize() = 0;
-    virtual void Update(const void* p, size_t len) = 0;
+    virtual void Update(const u8* p, size_t len) = 0;
     virtual void Finish() = 0;
     virtual void GetDigest(DigestResult& result) = 0;
 
@@ -130,7 +158,7 @@ public:
         m_finished = false;
     }
 
-    void Update(const void* p, size_t len)
+    void Update(const u8* p, size_t len)
     {
         ASSERT(m_initialized);
         ASSERT(!m_finished);

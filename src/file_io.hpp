@@ -7,6 +7,13 @@
 #include "digest_common.hpp"
 #include <vector>
 #include <string>
+#include <stdio.h>
+
+
+// default 64M
+#define DEFAULT_BUFFER_SIZE  (8 * 1024)
+#define DEFAULT_BUFFER_COUNT (8 * 1024)
+
 
 
 class FileInputBuffer;
@@ -24,12 +31,18 @@ private:
     bool m_allFinish;
 
     // IO related members
-    bool m_reachEOF;   // Reach EOF or not
+    bool m_reachEOF;   // File reach EOF or not
+
+    // for file read
+    FILE* m_fileHandle;
+    uint64 m_currentOffset;
+    int m_ferror;
 
 public:
     FileInfo(const char* fileName)
         : m_fileName(fileName), m_hashCount(0), m_allFinish(false),
-            m_reachEOF(false)
+            m_reachEOF(false), 
+            m_fileHandle(NULL), m_currentOffset(0), m_ferror(0)
     {}
     ~FileInfo();
 
@@ -45,7 +58,7 @@ public:
         return m_reachEOF;
     }
 
-    void Read(FileInputBuffer* buffer);
+    bool read(FileInputBuffer* buffer);
 
     Digester* getDigesterByIndex(int index)
     {
@@ -71,6 +84,18 @@ public:
     void reportResult()
     {
         //TODO : output all result for this file
+        printf( "File: %s \n", m_fileName.c_str());
+
+        for (int i = 0; i < m_hashCount; ++i)
+        {
+            Digester* dig = m_hashers[i];
+
+            // result
+            std::string res;
+            m_results[i].toString(res);
+
+            printf( "%s: %s \n", dig->GetName(), res.c_str());
+        }
     }
 };
 
@@ -115,12 +140,14 @@ public:
 class FileInputBuffer
 {
 private:
-    char* m_buffer;
-    size_t m_bufferSize;
+    int m_myIndex;    // Global index of this buffer
+
+    u8* m_buffer;         // buffer head pointer
+    size_t m_bufferSize;  // size of buffer
 
     FileInfo* m_file;  // set to NULL for unused buffer
     uint64 m_offset;   // offset in file
-    size_t m_length;   // length in buffer, will be same as bufferSize, 
+    size_t m_length;   // length of data in buffer, will be same as buffer size, 
                         // unless last buffer on file
                         // or 0 for empty buffer
     bool m_reachEOF;   // Reach EOF or not
@@ -133,8 +160,13 @@ private:
     FileInputBuffer* m_next;
 
 public:
-    FileInputBuffer(size_t bufferSize, int hashCount);
+    FileInputBuffer(int index, size_t bufferSize, int hashCount);
     ~FileInputBuffer();
+
+    int getIndex()
+    {
+        return m_myIndex;
+    }
 
     FileInputBuffer* nextBuf()
     {
@@ -146,9 +178,34 @@ public:
         return m_file;
     }
 
+    u8* getBuffer()
+    {
+        return m_buffer;
+    }
+
+    size_t getBufferSize()
+    {
+        return m_bufferSize;
+    }
+
+    void setReadLength(size_t len)
+    {
+        m_length = len;
+    }
+
     bool hasReachEOF()
     {
         return m_reachEOF;
+    }
+
+    void setReadEOF()
+    {
+        m_reachEOF = true;
+    }
+
+    void setReadOffset(uint64 off)
+    {
+        m_offset = off;
     }
 
     bool availableForRead(FileInfo* newF)
@@ -163,9 +220,14 @@ public:
         return true;
     }
 
-    void doneReading()
+    void setReadDone()
     {
         m_reading = false;
+    }
+
+    bool getReading()
+    {
+        return m_reading;
     }
 
     bool availableForHash()
@@ -191,8 +253,13 @@ public:
 
     BufferHashStatus* getHashStatusByIndex(int index)
     {
-        ASSERT(index < m_hashCount)
+        ASSERT(index < m_hashCount);
         return m_hashStatusArr + index;
+    }
+
+    int getHashCount()
+    {
+        return m_hashCount;
     }
 
     void doHash(int index)
@@ -230,7 +297,9 @@ public:
         }
     }
 
-    static void Initialize(int hashCount);
+    static void Initialize(int hashCount,
+                        size_t bufferSize = DEFAULT_BUFFER_SIZE,
+                        size_t bufferCount = DEFAULT_BUFFER_COUNT);
     static void Uninitialize();
 
     static FileInputBuffer** g_inputRingBufferArr;

@@ -32,7 +32,7 @@ void Ed2kFile_Digester::Initialize()
         m_rootHash = MD4_Digester::CreateDigester();
     }
 
-    ASSERT(m_chunkHash != NULL && m_rootHash != NULL)
+    ASSERT(m_chunkHash != NULL && m_rootHash != NULL);
     m_chunkHash->Initialize();
     m_rootHash->Initialize();
     memset(m_result, 0, sizeof(m_result));
@@ -58,7 +58,7 @@ void Ed2kFile_Digester::OnChunkComplete()
     m_chunkHash->Initialize();
 }
 
-void Ed2kFile_Digester::Update(const void* p, size_t len)
+void Ed2kFile_Digester::Update(const u8* p, size_t len)
 {
     ulong64 chunkOff = m_fileOffset % ED2K_CHUNK_BYTES;
 
@@ -80,7 +80,7 @@ void Ed2kFile_Digester::Update(const void* p, size_t len)
 
         while (len - off >= ED2K_CHUNK_BYTES)
         {
-            m_chunkHash->Update(p + off, ED2K_CHUNK_BYTES);
+            m_chunkHash->Update((u8*)p + off, ED2K_CHUNK_BYTES);
             OnChunkComplete();
 
             off += ED2K_CHUNK_BYTES;
@@ -90,7 +90,7 @@ void Ed2kFile_Digester::Update(const void* p, size_t len)
         // last less than chunk size
         if (len - off > 0)
         {
-            m_chunkHash->Update(p + off, len - off);
+            m_chunkHash->Update((u8*)p + off, len - off);
         }
     }
 
@@ -123,6 +123,6 @@ void Ed2kFile_Digester::Finish()
 
 void Ed2kFile_Digester::GetDigest(DigestResult& result)
 {
-    result.Assign(m_result, sizeof(m_result));
+    result.assign(m_result, sizeof(m_result));
 }
 

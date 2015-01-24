@@ -12,7 +12,7 @@ public:
     enum { MD4_DIGEST_BYTES = 16 };
 
     virtual void Initialize();
-    virtual void Update(const void* p, size_t len);
+    virtual void Update(const u8* p, size_t len);
     virtual void Finish();
     virtual void GetDigest(DigestResult& result);
 
@@ -24,7 +24,7 @@ public:
 
     static const char* const NAME;
 
-    void GetDigest(void* p, size_t& len);
+    void GetDigest(u8* p, size_t len);
 
 private:
     MD4_Digester() : Digester(NAME, MD4_DIGEST_BYTES)

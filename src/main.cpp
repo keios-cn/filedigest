@@ -79,6 +79,11 @@ public:
 
 };
 
+SimpleCondition* CreateSimpleCondition()
+{
+    return new PthreadCondition();
+}
+
 
 SimpleLock* g_bufferMutex = NULL;
 
@@ -93,6 +98,8 @@ FileInputBuffer* g_currentHashBuffer;
 std::vector<FileInfo*> g_fileArray;
 
 std::vector<FileInfo*>::iterator g_ioFileIter;
+
+bool g_allReadDone = false;
 
 
 void
@@ -134,16 +141,24 @@ IOThread()
         g_bufferMutex->Unlock();
 
         // read file
-        file->Read(g_currentIOBuffer);
+        if (!file->read(g_currentIOBuffer))
+        {
+            // handle error
+            printf("Read file error\n");
+            return;
+        }
 
         g_bufferMutex->Lock();
 
-        g_currentIOBuffer->doneReading();
+        g_currentIOBuffer->setReadDone();
         g_currentIOBuffer = g_currentIOBuffer->nextBuf();
 
         if (file->hasReachedEOF())
         {
             g_ioFileIter++;
+
+            dbg_printf("Move to next file\n");
+
             if (g_ioFileIter == g_fileArray.end())
             {
                 allDone = true;
@@ -154,7 +169,10 @@ IOThread()
         g_hashCond->Broadcast();
     }
 
+    g_allReadDone = true;
     g_bufferMutex->Unlock();
+
+    dbg_printf("IO thread exit...\n");
 
     return;
 }
@@ -169,6 +187,7 @@ CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
     if (g_currentHashBuffer->getFirstRunnableJob(index))
     {
         buffer = g_currentHashBuffer;
+        dbg_printf("1. get index %d on buffer %d \n", index, buffer->getIndex());
         return true;
     }
 
@@ -182,13 +201,16 @@ CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
     }
 
     FileInfo* fileInfo = buffer->getFileInfo();
+    ASSERT(fileInfo != NULL);
+
     if (g_currentHashBuffer->getFileInfo() != fileInfo)
     {
-        // next buffer is a new file
+        // next to current buffer is a new file
         ASSERT(g_currentHashBuffer->hasReachEOF());
 
         if (buffer->getFirstRunnableJob(index))
         {
+            dbg_printf("2. get index %d on buffer %d \n", index, buffer->getIndex());
             return true;
         }
         return false;
@@ -196,11 +218,14 @@ CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
     else
     {
         // same file
+        ASSERT(fileInfo->getHashCount() == g_currentHashBuffer->getHashCount());
+        ASSERT(fileInfo->getHashCount() == buffer->getHashCount());
         for (index = 0; index < fileInfo->getHashCount(); ++index)
         {
             if (g_currentHashBuffer->getHashStatusByIndex(index)->hasDone() &&
                     buffer->getHashStatusByIndex(index)->hasNotRun())
             {
+                dbg_printf("3. get index %d on buffer %d \n", index, buffer->getIndex());
                 return true;
             }
         }
@@ -210,21 +235,28 @@ CheckAvailableHashJob(FileInputBuffer*& buffer, int& index)
 
 
 void
-HashThread()
+HashThread(int selfNumber)
 {
-    bool allDone = false;
-
     int hashIndex;
     FileInputBuffer* buffer;
 
     g_bufferMutex->Lock();
 
-    while (!allDone)
+    while (true)
     {
         while (!CheckAvailableHashJob(buffer, hashIndex))
         {
+            if (g_allReadDone)
+            {
+                // all file read finished, and no more hash job
+                // hash thread should exit now
+                goto _ExitThread;
+            }
             g_hashCond->Wait(g_bufferMutex);
         }
+
+        dbg_printf("HashThread[%d] Start hashIndex %d on buffer %d \n", 
+                selfNumber, hashIndex, buffer->getIndex());
 
         buffer->getHashStatusByIndex(hashIndex)->setRunning();
         g_bufferMutex->Unlock();
@@ -233,12 +265,16 @@ HashThread()
 
         g_bufferMutex->Lock();
 
+        dbg_printf("HashThread[%d] Finish hashIndex %d on buffer %d \n", 
+                selfNumber, hashIndex, buffer->getIndex());
+
         buffer->getHashStatusByIndex(hashIndex)->setDone();
         if (buffer->hasReachEOF())
         {
             if (buffer->checkAllDone() && buffer->getFileInfo()->checkFinish())
             {
                 buffer->getFileInfo()->reportResult();
+                dbg_printf("HashThread[%d] Print result done.\n", selfNumber);
             }
         }
 
@@ -248,15 +284,40 @@ HashThread()
 
             g_currentHashBuffer = buffer->nextBuf();
 
+            dbg_printf("HashThread[%d] Current hash buffer move to %d \n", 
+                    selfNumber, g_currentHashBuffer->getIndex());
+
             buffer->resetForRead();
             g_ioCond->Broadcast();
         }
     }
 
+_ExitThread:
+    dbg_printf("HashThread[%d] exit.\n", selfNumber);
+
     g_bufferMutex->Unlock();
+
     return;
 }
 
+
+void *
+HashThread_Wrapper(void* ptr)
+{
+    HashThread( (int) ptr );
+    return NULL;
+}
+
+void*
+IOThread_Wrapper(void* ptr)
+{
+    IOThread();
+    return NULL;
+}
+
+#define MAX_THREADS 8
+pthread_t g_ioThread = 0;
+pthread_t g_hashThread[MAX_THREADS] = {0,};
 
 void
 InitializeThreads()
@@ -264,6 +325,24 @@ InitializeThreads()
     g_bufferMutex = CreateSimpleLock();
     g_hashCond = CreateSimpleCondition();
     g_ioCond   = CreateSimpleCondition();
+
+    int ret = pthread_create(&g_ioThread, NULL, IOThread_Wrapper, NULL);
+    if (ret)
+    { 
+        fprintf(stderr, "Error - pthread_create() return code: %d\n", ret); 
+        exit(1); 
+    } 
+
+    for (int i = 0; i < 2; ++i)
+    {
+        ret = pthread_create(&g_hashThread[i], NULL, HashThread_Wrapper, (void*)i);
+        if (ret)
+        { 
+            fprintf(stderr, "Error - pthread_create() return code: %d\n", ret); 
+            exit(1); 
+        } 
+    }
+
 }
 
 
@@ -278,12 +357,22 @@ main()
     f1->InitializeHashers(hashNames);
     g_fileArray.push_back(f1);
 
-
-    FileInputBuffer::Initialize(hashNames.size());
+    FileInputBuffer::Initialize(hashNames.size(), 128 * 1024, 256);
     g_currentIOBuffer = FileInputBuffer::g_inputRingBufferArr[0];
     g_currentHashBuffer = g_currentIOBuffer;
 
     g_ioFileIter = g_fileArray.begin();
+
+    InitializeThreads();
+
+    pthread_join(g_ioThread, NULL);
+    for (int i = 0; i < MAX_THREADS; ++i)
+    {
+        if (g_hashThread[i] != 0)
+        {
+            pthread_join(g_hashThread[i], NULL);
+        }
+    }
 
     return 0;
 }
