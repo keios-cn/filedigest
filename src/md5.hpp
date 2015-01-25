@@ -1,12 +1,12 @@
 
-#ifndef MD4_HPP_
-#define MD4_HPP_
+#ifndef MD5_HPP_
+#define MD5_HPP_
 
 #include "digest_common.hpp"
-#include "md4/md4.h"
+#include "md5/md5.h"
 
 
-class MD4_Digester : public Digester
+class MD5_Digester : public Digester
 {
 public:
     enum { DIGEST_BYTES = 16 };
@@ -17,9 +17,9 @@ public:
     virtual void GetDigest(DigestResult& result);
 
 public:
-    static MD4_Digester* CreateDigester()
+    static MD5_Digester* CreateDigester()
     {
-        return new MD4_Digester();
+        return new MD5_Digester();
     }
 
     static const char* const NAME;
@@ -27,37 +27,37 @@ public:
     void GetDigest(u8* p, size_t len);
 
 private:
-    MD4_Digester() : Digester(NAME, DIGEST_BYTES)
+    MD5_Digester() : Digester(NAME, DIGEST_BYTES)
     {
         Initialize();
     }
 
-    MD4_CTX m_ctx;
+    MD5_CTX m_ctx;
     uint8 m_result[DIGEST_BYTES];
 };
 
 
-class MD4_Factory: public DigesterFactory
+class MD5_Factory: public DigesterFactory
 {
-    friend class MD4_Digester;
+    friend class MD5_Digester;
 
 public:
     virtual Digester* CreateDigester()
     {
-        return MD4_Digester::CreateDigester();
+        return MD5_Digester::CreateDigester();
     }
     virtual const char* GetDigestName()
     {
-        return MD4_Digester::NAME;
+        return MD5_Digester::NAME;
     }
 
 protected:
-    MD4_Factory()
+    MD5_Factory()
     {}
 
 private:
-    static MD4_Factory instance;
+    static MD5_Factory instance;
 };
 
 
-#endif /* MD4_HPP_ */
+#endif /* MD5_HPP_ */

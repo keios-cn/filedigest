@@ -352,6 +352,8 @@ main()
     std::vector<std::string> hashNames;
     hashNames.push_back("md4");
     hashNames.push_back("ed2k_file_hash");
+    hashNames.push_back("md5");
+    hashNames.push_back("sha1");
 
     FileInfo* f1 = new FileInfo("test.dat");
     f1->InitializeHashers(hashNames);

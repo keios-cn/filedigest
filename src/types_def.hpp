@@ -11,6 +11,17 @@
 #define ASSERT(x)
 #endif /* DEBUG_ALL */
 
+
+#if ((defined(__GNUC__) && __GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && !defined(__cplusplus)
+#define STATIC_ASSERT(description, condition) \
+    _Static_assert(condition, #description);
+#else
+#define STATIC_ASSERT(description, condition) \
+    typedef char __VIOLATED_ASSERTION_THAT__##description[1-2*!(condition)];
+#endif
+
+
+
 typedef char            int8;
 typedef unsigned char  uint8;
 typedef unsigned char     u8;

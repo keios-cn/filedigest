@@ -7,7 +7,7 @@
 MD4_Factory MD4_Factory::instance;
 
 
-const char* const MD4_Digester::NAME = "md4";
+const char* const MD4_Digester::NAME = "MD4";
 
 
 void MD4_Digester::Initialize()
@@ -25,17 +25,18 @@ void MD4_Digester::Finish()
     MD4_Final(m_result, &m_ctx);
 }
 
+STATIC_ASSERT(STATIC_ASSERT_MD4_DIGEST_LENGTH, 
+            (MD4_Digester::DIGEST_BYTES == MD4_DIGEST_LENGTH) );
+
 void MD4_Digester::GetDigest(DigestResult& result)
 {
-    ASSERT(MD4_DIGEST_BYTES == MD4_DIGEST_LENGTH);
-
-    result.assign(m_result, MD4_DIGEST_BYTES);
+    result.assign(m_result, DIGEST_BYTES);
 }
 
 void MD4_Digester::GetDigest(u8* p, size_t len)
 {
-    ASSERT(len >= MD4_DIGEST_BYTES);
+    ASSERT(len >= DIGEST_BYTES);
 
-    memcpy(p, m_result, MD4_DIGEST_BYTES);
+    memcpy(p, m_result, DIGEST_BYTES);
 }
 

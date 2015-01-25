@@ -75,7 +75,7 @@ public:
 private:
 
     Ed2kFile_Digester() : 
-            Digester(NAME, MD4_Digester::MD4_DIGEST_BYTES),
+            Digester(NAME, MD4_Digester::DIGEST_BYTES),
             m_chunkHash(NULL), 
             m_rootHash(NULL), 
             m_fileOffset(0),
@@ -90,8 +90,8 @@ private:
     MD4_Digester* m_rootHash;
     ulong64       m_fileOffset;     // Current offset in file
     ulong64       m_chunkStart;     // start offset of current chunk hash
-    uint8         m_result[MD4_Digester::MD4_DIGEST_BYTES];
-    uint8         m_lastChunkHash[MD4_Digester::MD4_DIGEST_BYTES];
+    uint8         m_result[MD4_Digester::DIGEST_BYTES];
+    uint8         m_lastChunkHash[MD4_Digester::DIGEST_BYTES];
 };
 
 
