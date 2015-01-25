@@ -333,7 +333,7 @@ InitializeThreads()
         exit(1); 
     } 
 
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         ret = pthread_create(&g_hashThread[i], NULL, HashThread_Wrapper, (void*)i);
         if (ret)
@@ -347,16 +347,25 @@ InitializeThreads()
 
 
 int
-main()
+main(int argc, char* argv[])
 {
     std::vector<std::string> hashNames;
-    hashNames.push_back("md4");
+    hashNames.push_back("MD4");
     hashNames.push_back("ed2k_file_hash");
-    hashNames.push_back("md5");
-    hashNames.push_back("sha1");
+    hashNames.push_back("MD5");
+    hashNames.push_back("SHA1");
+    hashNames.push_back("SHA224");
+    hashNames.push_back("SHA256");
+    hashNames.push_back("SHA384");
+    hashNames.push_back("SHA512");
 
-    FileInfo* f1 = new FileInfo("test.dat");
-    f1->InitializeHashers(hashNames);
+    FileInfo* f1 = new FileInfo(argv[1]);
+    if (! f1->InitializeHashers(hashNames) )
+    {
+        printf("InitializeHashers failed! \n");
+        return 1;
+    }
+
     g_fileArray.push_back(f1);
 
     FileInputBuffer::Initialize(hashNames.size(), 128 * 1024, 256);

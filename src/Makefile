@@ -1,6 +1,7 @@
 
 CXX      = g++
-CXXFLAGS = -g -Wall -Winvalid-offsetof -DDEBUG_ALL
+# CXXFLAGS = -g -Wall -Winvalid-offsetof -DDEBUG_ALL
+CXXFLAGS = -O2 -Wall -Winvalid-offsetof
 INCLUDES =
 LDFLAGS  = -lpthread
 

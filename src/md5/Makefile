@@ -2,7 +2,8 @@
 #CXX      = g++
 #CXXFLAGS = -g -Wall -Winvalid-offsetof
 CC     = gcc
-CFLAGS = -g -Wall
+#CFLAGS = -g -Wall
+CFLAGS = -O2 -Wall
 INCLUDES = -I../md4/
 LDFLAGS  =
 

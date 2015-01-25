@@ -122,7 +122,7 @@ public:
         while (p != NULL)
         {
             const char* n = p->GetDigestName();
-            if (strcmp(n, name) == 0)
+            if (stricmp(n, name) == 0)
                 return p;
 
             p = p->m_next;

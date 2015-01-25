@@ -7,7 +7,7 @@
 SHA1_Factory SHA1_Factory::instance;
 
 
-const char* const SHA1_Digester::NAME = "sha1";
+const char* const SHA1_Digester::NAME = "SHA1";
 
 
 void SHA1_Digester::Initialize()
