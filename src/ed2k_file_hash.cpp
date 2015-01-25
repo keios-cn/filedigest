@@ -4,7 +4,7 @@
 
 Ed2kFile_Factory Ed2kFile_Factory::instance;
 
-const char* const Ed2kFile_Digester::NAME = "ed2k_file_hash";
+const char* const Ed2kFile_Digester::NAME = "ED2K_FILE_HASH";
 
 
 Ed2kFile_Digester::~Ed2kFile_Digester()

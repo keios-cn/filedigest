@@ -354,10 +354,10 @@ main(int argc, char* argv[])
     hashNames.push_back("ed2k_file_hash");
     hashNames.push_back("MD5");
     hashNames.push_back("SHA1");
-    hashNames.push_back("SHA224");
-    hashNames.push_back("SHA256");
-    hashNames.push_back("SHA384");
-    hashNames.push_back("SHA512");
+    //hashNames.push_back("SHA224");
+    //hashNames.push_back("SHA256");
+    //hashNames.push_back("SHA384");
+    //hashNames.push_back("SHA512");
 
     FileInfo* f1 = new FileInfo(argv[1]);
     if (! f1->InitializeHashers(hashNames) )
